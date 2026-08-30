@@ -9,53 +9,66 @@ set -ouex pipefail
 # bazzite-nvidia-open, WITHOUT removing KDE Plasma.
 # KDE stays as the safety-net session (choose it at the SDDM login).
 #
-# Package strategy for Fedora 44 atomic:
-#   - Hyprland stack comes from the ashbuk/Hyprland-Fedora COPR.
-#     It uses vendored deps + RPATH isolation, so it avoids the
-#     libdisplay-info.so.3 / aquamarine ABI breakage that affects
-#     other COPRs on F44.
-#   - Everything else comes from Fedora / RPMFusion repos already
-#     enabled on the ublue base image.
+# Strategy:
+#   - CORE (hyprland + portal) is installed strictly: if it fails, the
+#     build fails (we need the compositor).
+#   - Everything else is installed best-effort via install_optional():
+#     a missing package name in a given repo logs a warning but does NOT
+#     abort the build. This keeps the image usable and lets us refine
+#     package names iteratively without losing a whole build.
 #############################################
 
 # Copy the contents of system_files/ of the git repo to /
 cp -avf "/ctx/system_files"/. /
 
+# Best-effort installer: tries each package individually; warns on failure.
+install_optional() {
+    for pkg in "$@"; do
+        if dnf5 -y install "$pkg"; then
+            echo "OK: installed $pkg"
+        else
+            echo "WARN: could not install '$pkg' (skipping)"
+        fi
+    done
+}
+
 ### -------------------------------------------------------------
-### 1. Hyprland compositor + session core (COPR: ashbuk/Hyprland-Fedora)
+### 1. CORE: Hyprland compositor + portal (COPR: ashbuk/Hyprland-Fedora)
+###    Strict install — the build MUST fail if this doesn't work.
 ### -------------------------------------------------------------
-# Enable the COPR only for the build; we disable it again at the end so
-# it does not remain enabled on the shipped image.
 dnf5 -y copr enable ashbuk/Hyprland-Fedora
 
 # hyprland pulls in hyprlock + hypridle as subpackages per the COPR.
-# xdg-desktop-portal-hyprland is REQUIRED for screen sharing / file pickers
-# under Wayland (Discord/OBS/Zoom screen share, GTK/portal file dialogs).
+# xdg-desktop-portal-hyprland is REQUIRED for Wayland screen sharing / file pickers.
 dnf5 -y install \
     hyprland \
     xdg-desktop-portal-hyprland
 
 ### -------------------------------------------------------------
-### 2. Wayland session components (bar, launcher, notifications, wallpaper)
+### 2. Wayland session components (bar, launcher, notifications, logout)
+###    Best-effort so one missing name never kills the build.
 ### -------------------------------------------------------------
-# hyprpaper is the Hyprland-native wallpaper daemon and IS packaged in Fedora
-# repos (swww is not packaged for F44 and would need a Rust build).
-dnf5 -y install \
+install_optional \
     waybar \
     wofi \
     mako \
-    hyprpaper \
     wlogout
 
+# Wallpaper daemon: try hyprpaper first, then swww; either is fine.
+# (Availability varies by repo; a wallpaper tool can also be added later
+#  per-user in the dotfiles phase.)
+install_optional hyprpaper
+install_optional swww
+
 ### -------------------------------------------------------------
-### 3. Wayland utilities (screenshots, clipboard, brightness, audio, idle helpers)
+### 3. Wayland utilities (screenshots, clipboard, brightness, audio, idle)
 ### -------------------------------------------------------------
-# X11 screenshot tools do NOT work under Wayland; these are the native ones.
-# Critical ones from base repos:
-dnf5 -y install \
+install_optional \
     grim \
     slurp \
     wl-clipboard \
+    hyprshot \
+    hyprpicker \
     brightnessctl \
     playerctl \
     pamixer \
@@ -64,14 +77,10 @@ dnf5 -y install \
     blueman \
     polkit-gnome
 
-# Optional extras (may live in COPR/other repos); do not fail the build if missing.
-dnf5 -y install hyprshot   || echo "WARN: hyprshot not available, skipping (grim+slurp cover screenshots)"
-dnf5 -y install hyprpicker || echo "WARN: hyprpicker not available, skipping"
-
 ### -------------------------------------------------------------
 ### 4. Terminal + file manager + basic apps for the session
 ### -------------------------------------------------------------
-dnf5 -y install \
+install_optional \
     kitty \
     thunar \
     thunar-volman \
@@ -81,23 +90,21 @@ dnf5 -y install \
 ### 5. Fonts (base repos + emoji). Nerd Fonts are added per-user later
 ###    in the dotfiles phase to avoid depending on extra COPRs here.
 ### -------------------------------------------------------------
-dnf5 -y install \
+install_optional \
     jetbrains-mono-fonts-all \
     google-noto-emoji-fonts \
     google-noto-sans-fonts \
-    fontawesome-fonts-all \
-    || echo "WARN: some font packages missing, continuing"
+    fontawesome-fonts-all
 
 ### -------------------------------------------------------------
 ### 6. CLI quality-of-life (optional but nice for a riced setup)
 ### -------------------------------------------------------------
-dnf5 -y install \
+install_optional \
     starship \
     eza \
     bat \
     fastfetch \
-    jq \
-    || echo "WARN: some CLI extras missing, continuing"
+    jq
 
 ### -------------------------------------------------------------
 ### Cleanup: disable the COPR so it is not enabled on the final image
