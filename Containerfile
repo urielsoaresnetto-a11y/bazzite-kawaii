@@ -4,10 +4,13 @@ COPY build_files /
 COPY system_files /system_files
 
 # Base Image
-FROM ghcr.io/ublue-os/bazzite:stable@sha256:b923f92d5a5b59eb992e269383eba2744601052da9d3d1595f76e79aa6ce2df0
+# We base on bazzite-nvidia-open (matches the user's current system exactly).
+# Using the :stable tag (not a pinned digest) so every rebuild inherits Bazzite's
+# latest kernel, NVIDIA driver, Mesa and security updates automatically.
+FROM ghcr.io/ublue-os/bazzite-nvidia-open:stable
 ## Other possible base images include:
+# FROM ghcr.io/ublue-os/bazzite:stable
 # FROM ghcr.io/ublue-os/bazzite:testing
-# FROM ghcr.io/ublue-os/aurora:stable
 # FROM ghcr.io/ublue-os/bluefin-nvidia-open:stable
 # 
 # ... and so on, here are more base images

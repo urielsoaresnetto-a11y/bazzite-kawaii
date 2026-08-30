@@ -1,4 +1,20 @@
-# image-template
+# bazzite-kawaii 🌸
+
+A **personal, unofficial** custom [bootc](https://github.com/bootc-dev/bootc) image
+built on top of [Bazzite](https://bazzite.gg/) (`bazzite-nvidia-open`). It adds a
+[Hyprland](https://hypr.land/) Wayland session and a kawaii rice, while keeping
+KDE Plasma installed as a safety-net session (selectable at login).
+
+> **Disclaimer:** This is an independent, unofficial image derived from Bazzite /
+> Universal Blue. It is **not affiliated with, endorsed by, or supported by** the
+> Bazzite or Universal Blue projects. All upstream trademarks belong to their
+> respective owners. Provided as-is, for personal use.
+
+Built from the Universal Blue [image-template](https://github.com/ublue-os/image-template).
+
+---
+
+## Original template documentation
 
 This repository is meant to be a template for building your own custom [bootc](https://github.com/bootc-dev/bootc) image. This template is the recommended way to make customizations to any image published by the Universal Blue Project.
 
