@@ -111,6 +111,25 @@ install_optional \
     jq
 
 ### -------------------------------------------------------------
+### 7. hyprbars plugin (title bars with buttons, KDE/Bazzite-like)
+###    Built at image time via hyprpm. Best-effort: if it fails to
+###    compile against this COPR's Hyprland, the build still succeeds.
+### -------------------------------------------------------------
+install_optional cmake cpio pkgconf-pkg-config git gcc-c++ meson ninja-build
+# hyprland-devel provides headers hyprpm may need
+install_optional hyprland-devel
+
+# Try to build the official plugins (hyprbars) so title bars are available.
+# Runs as best-effort; never fail the whole image if the plugin can't build.
+if command -v hyprpm >/dev/null 2>&1; then
+    (
+      hyprpm update || true
+      hyprpm add https://github.com/hyprwm/hyprland-plugins || true
+      hyprpm enable hyprbars || true
+    ) || echo "WARN: hyprbars build skipped (will use Waybar window controls instead)"
+fi
+
+### -------------------------------------------------------------
 ### Cleanup: disable the COPR so it is not enabled on the final image
 ### -------------------------------------------------------------
 dnf5 -y copr disable ashbuk/Hyprland-Fedora
