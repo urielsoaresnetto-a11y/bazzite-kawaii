@@ -54,11 +54,15 @@ install_optional \
     mako \
     wlogout
 
-# Wallpaper daemon: try hyprpaper first, then swww; either is fine.
-# (Availability varies by repo; a wallpaper tool can also be added later
-#  per-user in the dotfiles phase.)
+# Wallpaper daemon: swaybg is in Fedora repos and works great on Hyprland.
+# Also try hyprpaper/swww in case they become available (best-effort).
+install_optional swaybg
 install_optional hyprpaper
 install_optional swww
+
+# Lock + idle (subpackages may not auto-install; request explicitly).
+install_optional hyprlock
+install_optional hypridle
 
 ### -------------------------------------------------------------
 ### 3. Wayland utilities (screenshots, clipboard, brightness, audio, idle)
