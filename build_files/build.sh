@@ -38,23 +38,24 @@ dnf5 -y install \
 ### -------------------------------------------------------------
 ### 2. Wayland session components (bar, launcher, notifications, wallpaper)
 ### -------------------------------------------------------------
+# hyprpaper is the Hyprland-native wallpaper daemon and IS packaged in Fedora
+# repos (swww is not packaged for F44 and would need a Rust build).
 dnf5 -y install \
     waybar \
     wofi \
     mako \
-    swww \
+    hyprpaper \
     wlogout
 
 ### -------------------------------------------------------------
 ### 3. Wayland utilities (screenshots, clipboard, brightness, audio, idle helpers)
 ### -------------------------------------------------------------
 # X11 screenshot tools do NOT work under Wayland; these are the native ones.
+# Critical ones from base repos:
 dnf5 -y install \
     grim \
     slurp \
     wl-clipboard \
-    hyprshot \
-    hyprpicker \
     brightnessctl \
     playerctl \
     pamixer \
@@ -62,6 +63,10 @@ dnf5 -y install \
     network-manager-applet \
     blueman \
     polkit-gnome
+
+# Optional extras (may live in COPR/other repos); do not fail the build if missing.
+dnf5 -y install hyprshot   || echo "WARN: hyprshot not available, skipping (grim+slurp cover screenshots)"
+dnf5 -y install hyprpicker || echo "WARN: hyprpicker not available, skipping"
 
 ### -------------------------------------------------------------
 ### 4. Terminal + file manager + basic apps for the session
@@ -73,16 +78,15 @@ dnf5 -y install \
     gvfs
 
 ### -------------------------------------------------------------
-### 5. Fonts (Nerd Fonts + emoji + cute-friendly families)
+### 5. Fonts (base repos + emoji). Nerd Fonts are added per-user later
+###    in the dotfiles phase to avoid depending on extra COPRs here.
 ### -------------------------------------------------------------
-# Nerd Fonts provide the glyphs/icons Waybar and prompts need.
 dnf5 -y install \
-    jetbrains-mono-nerd-fonts \
-    fira-code-fonts \
+    jetbrains-mono-fonts-all \
     google-noto-emoji-fonts \
     google-noto-sans-fonts \
-    rsms-inter-fonts \
-    fontawesome-fonts-all || true
+    fontawesome-fonts-all \
+    || echo "WARN: some font packages missing, continuing"
 
 ### -------------------------------------------------------------
 ### 6. CLI quality-of-life (optional but nice for a riced setup)
@@ -93,7 +97,7 @@ dnf5 -y install \
     bat \
     fastfetch \
     jq \
-    || true
+    || echo "WARN: some CLI extras missing, continuing"
 
 ### -------------------------------------------------------------
 ### Cleanup: disable the COPR so it is not enabled on the final image
